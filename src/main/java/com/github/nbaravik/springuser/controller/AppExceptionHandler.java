@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -42,10 +43,16 @@ public class AppExceptionHandler {
         return new ResponseEntity(new ViolationErrorsDTO(violations), HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorDTO> handleMessageNotReadableException(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        LOGGER.error("{}: {} {}: {}", HttpStatus.BAD_REQUEST, request.getMethod(), request.getServletPath(), ex.getMessage());
+        return new ResponseEntity(new ErrorDTO(ex.getMessage()), HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleOtherExceptions(Exception ex, HttpServletRequest request) {
         LOGGER.error("{}: {} {}: {}", HttpStatus.INTERNAL_SERVER_ERROR, request.getMethod(), request.getServletPath(), ex.getMessage());
-        LOGGER.error("{}", ex.getStackTrace().toString());
+        ex.printStackTrace();
         return new ResponseEntity(new ErrorDTO("Something went wrong. Please, try again."), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
